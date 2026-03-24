@@ -1,0 +1,21 @@
+# Python caches
+__pycache__/
+*.pyc
+
+# Virtual environments
+venv/
+env/
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Face recognition temp files
+*.dat
