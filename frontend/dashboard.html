@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Glowing Smart Attendance</title>
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:'Segoe UI',sans-serif;
+}
+
+body{
+height:100vh;
+background:linear-gradient(270deg,#ff00cc,#3333ff,#00ffcc,#ffcc00);
+background-size:800% 800%;
+animation:glowBG 15s ease infinite;
+color:white;
+padding:20px;
+}
+
+@keyframes glowBG{
+0%{background-position:0% 50%;}
+50%{background-position:100% 50%;}
+100%{background-position:0% 50%;}
+}
+
+h1,h3,th,td{
+text-shadow:0 0 10px rgba(255,255,255,0.9),
+            0 0 20px rgba(0,255,255,0.8),
+            0 0 30px rgba(0,255,255,0.6);
+}
+
+.header{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:20px;
+}
+
+.clock{
+font-size:18px;
+font-weight:bold;
+}
+
+.container{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:20px;
+}
+
+.card{
+background:rgba(0,0,0,0.25);
+border-radius:20px;
+padding:20px;
+backdrop-filter:blur(15px);
+box-shadow:0 0 20px rgba(0,255,255,0.6);
+}
+
+video{
+width:100%;
+border-radius:15px;
+box-shadow:0 0 20px cyan;
+}
+
+button{
+padding:10px 15px;
+border:none;
+border-radius:20px;
+margin:5px;
+font-weight:bold;
+cursor:pointer;
+color:white;
+box-shadow:0 0 10px rgba(255,255,255,0.8);
+}
+
+.start{background:#00ff9c;}
+.stop{background:#ff0066;}
+.mark{background:#0099ff;}
+.theme{background:#ffaa00;}
+
+table{
+width:100%;
+margin-top:10px;
+border-collapse:collapse;
+}
+
+table,th,td{
+border:1px solid rgba(255,255,255,0.3);
+padding:8px;
+text-align:center;
+}
+
+.present{
+color:#00ff9c;
+font-weight:bold;
+}
+
+.absent{
+color:#ff4d4d;
+font-weight:bold;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="header">
+<h1>✨ Smart Attendance Dashboard</h1>
+<div>
+<span class="clock" id="clock"></span>
+<button class="theme" onclick="changeTheme()">🎨 Change Color</button>
+</div>
+</div>
+
+<div class="container">
+
+<div class="card">
+<h3>📸 Face Recognition</h3>
+<video id="video" autoplay></video>
+<br>
+
+<button class="start" onclick="startScan()">Start Scan</button>
+<button class="stop" onclick="stopScan()">Stop Scan</button>
+<button class="mark" onclick="markAttendance()">Mark Attendance</button>
+
+<p id="scanStatus"></p>
+</div>
+
+<div class="card">
+<h3>👨‍🎓 Student List</h3>
+<table id="studentTable">
+<tr><th>Name</th><th>Status</th></tr>
+
+<tr><td>Prabha</td><td class="absent">Absent</td></tr>
+<tr><td>Pradeepa</td><td class="absent">Absent</td></tr>
+<tr><td>Pragalya</td><td class="absent">Absent</td></tr>
+<tr><td>Nivishna</td><td class="absent">Absent</td></tr>
+<tr><td>Priyadharshini</td><td class="absent">Absent</td></tr>
+<tr><td>Rudhra</td><td class="absent">Absent</td></tr>
+
+</table>
+</div>
+
+<div class="card" style="grid-column:span 2;">
+<h3>📊 Attendance Report</h3>
+<table id="reportTable">
+<tr>
+<th>Date</th>
+<th>Time</th>
+<th>Student</th>
+<th>Status</th>
+</tr>
+</table>
+</div>
+
+</div>
+
+<script>
+
+/* Clock */
+setInterval(()=>{
+let now=new Date();
+clock.innerHTML=now.toLocaleDateString()+" | "+now.toLocaleTimeString();
+},1000);
+
+let stream;
+
+function startScan(){
+navigator.mediaDevices.getUserMedia({video:true})
+.then(s=>{
+stream=s;
+video.srcObject=s;
+scanStatus.innerHTML="🟢 Face Recognition Started";
+});
+}
+
+function stopScan(){
+if(stream){
+stream.getTracks().forEach(track=>track.stop());
+scanStatus.innerHTML="🔴 Scan Stopped";
+}
+}
+
+function markAttendance(){
+
+let students=document.querySelectorAll("#studentTable tr");
+
+let randomIndex=Math.floor(Math.random()*(students.length-1))+1;
+let row=students[randomIndex];
+
+row.cells[1].innerHTML="Present";
+row.cells[1].className="present";
+
+let name=row.cells[0].innerText;
+
+let now=new Date();
+
+let report=document.getElementById("reportTable");
+
+let newRow=report.insertRow();
+
+newRow.insertCell(0).innerHTML=now.toLocaleDateString();
+newRow.insertCell(1).innerHTML=now.toLocaleTimeString();
+newRow.insertCell(2).innerHTML=name;
+newRow.insertCell(3).innerHTML="Present";
+
+scanStatus.innerHTML="✅ Attendance Marked for " + name;
+
+}
+
+/* Theme changer */
+let themes=[
+"linear-gradient(270deg,#ff00cc,#3333ff,#00ffcc)",
+"linear-gradient(270deg,#00ffcc,#ff0066,#6600ff)",
+"linear-gradient(270deg,#00f2fe,#4facfe,#43e97b)",
+"linear-gradient(270deg,#ff9a9e,#fad0c4,#fad0c4)"
+];
+
+let index=0;
+
+function changeTheme(){
+index=(index+1)%themes.length;
+document.body.style.background=themes[index];
+document.body.style.backgroundSize="800% 800%";
+}
+
+</script>
+
+</body>
+</html>
