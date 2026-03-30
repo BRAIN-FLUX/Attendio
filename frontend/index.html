@@ -1,41 +1,236 @@
+
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Smart Attendance System</title>
-    <style>
-        body {
-            font-family: Arial;
-            background-color: #f4f4f4;
-            text-align: center;
-        }
-        table {
-            margin: auto;
-            border-collapse: collapse;
-            width: 60%;
-            background: white;
-        }
-        th, td {
-            padding: 10px;
-            border: 1px solid black;
-        }
-        button {
-            padding: 5px 10px;
-            margin: 2px;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Attendio - Smart Attendance</title>
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:'Segoe UI', sans-serif;
+}
+
+/* Background with blur */
+body{
+height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+overflow:hidden;
+color:white;
+position:relative;
+}
+
+/* Blurred classroom image */
+body::before{
+content:"";
+position:absolute;
+top:0;
+left:0;
+width:100%;
+height:100%;
+
+background:
+linear-gradient(rgba(0,0,0,0.6),rgba(0,0,0,0.6)),
+url("https://images.unsplash.com/photo-1509062522246-3755977927d7");
+
+background-size:cover;
+background-position:center;
+filter:blur(6px);
+z-index:-1;
+}
+
+/* LOGIN BOX */
+.container{
+width:380px;
+background:linear-gradient(
+135deg,
+rgba(0,229,255,0.15),
+rgba(0,119,255,0.15)
+);
+backdrop-filter:blur(18px);
+padding:35px;
+border-radius:20px;
+box-shadow:
+0 0 25px rgba(0,229,255,0.3),
+0 25px 50px rgba(0,0,0,0.6);
+text-align:center;
+
+border:1px solid rgba(0,229,255,0.3);
+
+transform:translateY(-120vh);
+animation:slideDown 1.2s cubic-bezier(.23,1.01,.32,1) forwards;
+}
+
+@keyframes slideDown{
+to{
+transform:translateY(0);
+}
+}
+
+.logo{
+font-size:34px;
+font-weight:900;
+letter-spacing:2px;
+color:#00e5ff;
+text-shadow:0 0 20px #00e5ff;
+animation:pulse 2s infinite;
+}
+
+@keyframes pulse{
+0%,100%{ text-shadow:0 0 10px #00e5ff; }
+50%{ text-shadow:0 0 25px #00e5ff; }
+}
+
+.tagline{
+font-size:13px;
+margin-bottom:20px;
+color:#ddd;
+}
+
+input{
+width:100%;
+padding:12px;
+margin:12px 0;
+border:none;
+border-bottom:2px solid rgba(255,255,255,0.3);
+background:transparent;
+color:white;
+outline:none;
+transition:0.3s;
+}
+
+input:focus{
+border-bottom:2px solid #00e5ff;
+}
+
+.password-box{
+position:relative;
+}
+
+.show-pass{
+position:absolute;
+right:5px;
+top:10px;
+cursor:pointer;
+width:24px;
+height:24px;
+}
+
+.login-btn{
+width:100%;
+padding:12px;
+margin-top:15px;
+border:none;
+border-radius:10px;
+background:linear-gradient(45deg,#00e5ff,#0077ff);
+color:white;
+font-weight:600;
+cursor:pointer;
+transition:0.3s;
+}
+
+.login-btn:hover{
+transform:scale(1.05);
+box-shadow:0 10px 20px rgba(0,0,0,0.4);
+}
+
+.error{
+color:#ffb3b3;
+font-size:13px;
+}
+
+.footer{
+margin-top:15px;
+font-size:12px;
+color:#aaa;
+}
+
+</style>
 </head>
 
 <body>
 
-<h2>Smart Attendance System</h2>
+<div class="container">
 
-<table>
-    <tr>
-        <th>Student Name</th>
-        <th>Attendance</th>
-    </tr>
+<div class="logo">ATTENDIO</div>
+<div class="tagline">AI Powered Smart Attendance</div>
 
-    <tr>
-        <td>Student 1</td>
-        <td>
-            <button onclick="markPre…
+<h3>Login</h3>
+
+<input type="email" id="email" placeholder="Enter Email">
+
+<div class="password-box">
+<input type="password" id="password" placeholder="Enter Password">
+
+<span class="show-pass" onclick="togglePassword()" id="eyeIcon">
+<!-- OPEN EYE -->
+<svg xmlns="http://www.w3.org/2000/svg" fill="white" viewBox="0 0 24 24">
+<path d="M12 5c-7 0-10 7-10 7s3 7 10 7 10-7 10-7-3-7-10-7zm0 12a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-8a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/>
+</svg>
+</span>
+
+</div>
+
+<div class="error" id="error"></div>
+
+<button class="login-btn" onclick="login()">🔐 Login</button>
+
+<div class="footer">
+© 2026 Attendio | Smart Attendance System
+</div>
+
+</div>
+
+<script> 
+
+function togglePassword(){
+let pass = document.getElementById("password");
+let icon = document.getElementById("eyeIcon");
+
+if(pass.type === "password"){
+pass.type = "text";
+
+/* CLOSED EYE */
+icon.innerHTML = `
+<svg xmlns="http://www.w3.org/2000/svg" fill="white" viewBox="0 0 24 24">
+<path d="M2 5l17 17-1.5 1.5-3.3-3.3A9.8 9.8 0 0 1 12 19c-7 0-10-7-10-7a18.6 18.6 0 0 1 5.3-5.9L.5 6.5 2 5zm10 4a3 3 0 0 1 3 3c0 .5-.1 1-.3 1.4l-4.1-4.1c.4-.2.9-.3 1.4-.3zm0-4c7 0 10 7 10 7a18.9 18.9 0 0 1-3.2 4.3l-2.1-2.1A5 5 0 0 0 12 7c-.6 0-1.2.1-1.8.3L7.9 5.1A9.6 9.6 0 0 1 12 5z"/>
+</svg>
+`;
+
+}else{
+pass.type = "password";
+
+/* OPEN EYE */
+icon.innerHTML = `
+<svg xmlns="http://www.w3.org/2000/svg" fill="white" viewBox="0 0 24 24">
+<path d="M12 5c-7 0-10 7-10 7s3 7 10 7 10-7 10-7-3-7-10-7zm0 12a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-8a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/>
+</svg>
+`;
+}
+}
+
+function login(){
+let email=document.getElementById("email").value;
+let password=document.getElementById("password").value;
+let error=document.getElementById("error");
+
+if(email==="" || password===""){
+error.innerText="Please enter email and password";
+}
+else{
+error.innerText="";
+window.location.href="dashboard.html";
+}
+}
+
+</script>
+
+</body>
+</html>
+
