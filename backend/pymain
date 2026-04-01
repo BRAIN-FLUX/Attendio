@@ -1,90 +1,122 @@
 import cv2
 import face_recognition
 import os
-import mysql.connector
+import sqlite3
 from datetime import datetime
+import numpy as np
 
-# DB connection
-conn = mysql.connector.connect(
-    host="localhost",
-    user="root",
-    password="",   # your password
-    database="attendance_db"
-)
+# ---------------- DATABASE SETUP ----------------
+conn = sqlite3.connect("attendance.db")
 cursor = conn.cursor()
 
-# Load dataset
-path = 'dataset'
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS attendance (
+    sno INTEGER PRIMARY KEY AUTOINCREMENT,
+    student_id TEXT,
+    date TEXT,
+    time TEXT,
+    status TEXT
+)
+""")
+
+# ---------------- DATASET CHECK ----------------
+path = "dataset"
+
+if not os.path.exists(path):
+    os.makedirs(path)
+    print("📁 'dataset' folder created. Add student images and run again.")
+    exit()
+
+if not os.listdir(path):
+    print("⚠️ No images in dataset folder. Add student photos.")
+    exit()
+
+# ---------------- LOAD IMAGES ----------------
 images = []
-names = []
+classNames = []
 
 for file in os.listdir(path):
-    img = cv2.imread(f'{path}/{file}')
-    images.append(img)
-    names.append(os.path.splitext(file)[0])
+    img = cv2.imread(f"{path}/{file}")
+    if img is not None:
+        images.append(img)
+        classNames.append(os.path.splitext(file)[0])
 
-# Encode faces
+# ---------------- ENCODE FACES ----------------
 
 
-def encode_faces(images):
-    encodings = []
+def findEncodings(images):
+    encodeList = []
     for img in images:
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        encodings.append(face_recognition.face_encodings(img)[0])
-    return encodings
+        encodes = face_recognition.face_encodings(img)
+        if encodes:
+            encodeList.append(encodes[0])
+    return encodeList
 
 
-known_encodings = encode_faces(images)
+encodeListKnown = findEncodings(images)
+print("✅ Encoding Complete")
 
-# Start camera
+# ---------------- START CAMERA ----------------
 cap = cv2.VideoCapture(0)
-
-print("📷 Camera started...")
+print("📷 Camera Started... Press ENTER to exit")
 
 while True:
-    success, frame = cap.read()
+    success, img = cap.read()
+    if not success:
+        continue
 
-    small = cv2.resize(frame, (0, 0), None, 0.25, 0.25)
-    small = cv2.cvtColor(small, cv2.COLOR_BGR2RGB)
+    imgS = cv2.resize(img, (0, 0), None, 0.25, 0.25)
+    imgS = cv2.cvtColor(imgS, cv2.COLOR_BGR2RGB)
 
-    faces = face_recognition.face_locations(small)
-    encodes = face_recognition.face_encodings(small, faces)
+    facesCurFrame = face_recognition.face_locations(imgS)
+    encodesCurFrame = face_recognition.face_encodings(imgS, facesCurFrame)
 
-    for encode in encodes:
-        matches = face_recognition.compare_faces(known_encodings, encode)
+    for encodeFace, faceLoc in zip(encodesCurFrame, facesCurFrame):
+        matches = face_recognition.compare_faces(encodeListKnown, encodeFace)
+        faceDis = face_recognition.face_distance(encodeListKnown, encodeFace)
 
-        if True in matches:
-            index = matches.index(True)
-            data = names[index]
+        if len(faceDis) == 0:
+            continue
 
+        matchIndex = np.argmin(faceDis)
+
+        if matches[matchIndex]:
+            data = classNames[matchIndex]
             student_id, name = data.split("_")
 
             now = datetime.now()
 
-            # 🔥 Prevent duplicate (same day)
-            cursor.execute("""
-                SELECT * FROM attendance 
-                WHERE student_id=%s AND date=%s
-            """, (student_id, now.date()))
-
+            # Check duplicate attendance
+            cursor.execute(
+                "SELECT * FROM attendance WHERE student_id=? AND date=?",
+                (student_id, str(now.date()))
+            )
             result = cursor.fetchone()
 
             if result is None:
-                cursor.execute("""
-                    INSERT INTO attendance 
-                    (student_id, date, time, status)
-                    VALUES (%s, %s, %s, %s)
-                """, (student_id, now.date(), now.time(), "Present"))
-
+                cursor.execute(
+                    "INSERT INTO attendance (student_id, date, time, status) VALUES (?, ?, ?, ?)",
+                    (student_id, str(now.date()), str(now.time()), "Present")
+                )
                 conn.commit()
                 print(f"✅ {name} marked present")
             else:
-                print(f"⚠️ {name} already marked today")
+                print(f"⚠️ {name} already marked")
 
-    cv2.imshow("Camera", frame)
+            # Draw rectangle & name
+            y1, x2, y2, x1 = faceLoc
+            y1, x2, y2, x1 = y1*4, x2*4, y2*4, x1*4
 
-    if cv2.waitKey(1) == 13:
+            cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
+            cv2.putText(img, name, (x1, y1 - 10),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+
+    cv2.imshow("Smart Attendance", img)
+
+    if cv2.waitKey(1) == 13:  # ENTER key
         break
 
 cap.release()
 cv2.destroyAllWindows()
+conn.close()
